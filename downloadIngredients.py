@@ -1,17 +1,17 @@
-r" This file downloads all the ingredients listed in gourmetsleuth.com.
-	 Then it writes the ingredients to the file Ingredients.txt"
+r""" This file downloads all the ingredients listed in gourmetsleuth.com 
+	 Then it writes the ingredients to the file Ingredients.txt """ 
 
 import urllib
 from bs4 import BeautifulSoup
 import string
 
-root_url = 'http://www.gourmetsleuth.com/'
-ingredients_url = root_url+'ingredients/'
+root_url = 'http://www.gourmetsleuth.com'
+ingredients_url = root_url+'/ingredients'
 
 ingredients_list = []
 for letter in list(string.ascii_lowercase):
 #for letter in ['a','b','c']:
-	ingredients_child_url = ingredients_url+letter+'/'
+	ingredients_child_url = ingredients_url+'/'+letter
 	ingredients_html = urllib.urlopen(ingredients_child_url).read()
 	soup = BeautifulSoup(ingredients_html, 'html.parser')
 	pages_lists = soup.find_all('ul', attrs={"class": "sf_pagerNumeric"})
