@@ -2,13 +2,15 @@ r"This file downloads the recipes from gourmetsleuth.com"
 
 import urllib
 from bs4 import BeautifulSoup
+import pandas as pd
+
+recipes_df = pd.DataFrame(columns = ('Name', 'Ingredients', 'Instructions'))
 
 root_url = 'http://www.gourmetsleuth.com'
 recipes_url = root_url+'/recipes'
 
 courses_list = []
 courses_url = []
-
 
 # Obtain different courses
 recipes_html = urllib.urlopen(recipes_url).read()
@@ -28,9 +30,9 @@ for tag in categories:
 					courses_list.append(course_name.encode('ascii','ignore').lower())
 					courses_url.append(root_url+course_ref)
 
-
 # Download recipes by courses
 course_num = 0
+recipe_num = 0
 for course in courses_list:
 	course_url = courses_url[course_num]
 	print "course_url = ", course_url
@@ -54,17 +56,28 @@ for course in courses_list:
 
 		# 	loop over all the items on that page
 		for item in food_items:
+			# create a dictionary to hold the recipe information about this food item
+			recipe_dict = { }
 			recipe_url = root_url + item.find('a').get('href')
 			recipe_name = item.find('span').contents[0]
-			print "recipe_url = ", recipe_url
+			recipe_dict['Name'] = recipe_name
+
 			recipe_html = urllib.urlopen(recipe_url)
 			recipe_soup = BeautifulSoup(recipe_html, 'html.parser')
 			
 			# Make a list of all the ingredients needed for this recipe
+			ingredients_string = ''
 			ingredients = recipe_soup.find_all('li', itemprop="ingredients")
 			for ingredient_details in ingredients:
-				amount = ingredient_details.find('span', attrs={"class":"amount"}).contents[0].encode('ascii', 'ignore')
-				measure = ingredient_details.find('span', attrs = {"class":"measure"}).contents[0].encode('ascii', 'ignore')
+				#print "recipe_name = ", recipe_name ," ingredient_details = ", ingredient_details
+				try:
+					amount = ingredient_details.find('span', attrs={"class":"amount"}).contents[0].encode('ascii', 'ignore')
+				except IndexError:
+					amount = ' '
+				try:
+					measure = ingredient_details.find('span', attrs = {"class":"measure"}).contents[0].encode('ascii', 'ignore')
+				except IndexError:
+					measure = ' '
 
 				ingredient = ingredient_details.find('span', attrs={"class":"ingredient"})
 
@@ -72,12 +85,23 @@ for course in courses_list:
 					ingredient = ingredient.find('a').contents[0]
 				except AttributeError:
 					ingredient = ingredient.contents[0]
+				
+				ingredients_string += amount + ' ' +  measure + ' ' + ingredient + '\n '
 
-				print amount + ' ' + measure + ' ' + ingredient
-	
-			# Now find directions
-			directions = recipe_soup.find('div', itemprop='recipeInstructions').get_text()
-			print directions
-			break
+			recipe_dict['Ingredients'] = ingredients_string
+			# Now find instructions
+			instructions = recipe_soup.find('div', itemprop='recipeInstructions').get_text()
+			recipe_dict['Instructions'] = instructions
+
+			
+			recipe_df = pd.DataFrame(data=recipe_dict, index = [recipe_num])
+			recipes_df = pd.concat([recipes_df,recipe_df])
+			recipe_num += 1
+			
 		break
+
+	course_num += 1
 	break
+
+recipes_df.to_pickle('Recipes_DataFrame.pkl')
+print "recipes_df = " , recipes_df
