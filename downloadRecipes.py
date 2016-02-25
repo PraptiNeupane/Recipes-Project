@@ -62,35 +62,48 @@ for course in courses_list:
 			recipe_name = item.find('span').contents[0]
 			recipe_dict['Name'] = recipe_name
 
-			recipe_html = urllib.urlopen(recipe_url)
+			try:
+				recipe_html = urllib.urlopen(recipe_url)
+			except:
+				continue
+
+			print "recipe = ", recipe_url
 			recipe_soup = BeautifulSoup(recipe_html, 'html.parser')
-			
+
 			# Make a list of all the ingredients needed for this recipe
 			ingredients_string = ''
 			ingredients = recipe_soup.find_all('li', itemprop="ingredients")
 			for ingredient_details in ingredients:
-				#print "recipe_name = ", recipe_name ," ingredient_details = ", ingredient_details
 				try:
-					amount = ingredient_details.find('span', attrs={"class":"amount"}).contents[0].encode('ascii', 'ignore')
+					amount = ingredient_details.find('span', attrs={"class":"amount"}).contents[0]
 				except IndexError:
 					amount = ' '
 				try:
-					measure = ingredient_details.find('span', attrs = {"class":"measure"}).contents[0].encode('ascii', 'ignore')
+					measure = ingredient_details.find('span', attrs = {"class":"measure"}).contents[0]
 				except IndexError:
 					measure = ' '
 
 				ingredient = ingredient_details.find('span', attrs={"class":"ingredient"})
-
+				
+				#print "ingredient_details = ", ingredient_details
+				#print "ingredient = ", ingredient
 				try:
 					ingredient = ingredient.find('a').contents[0]
 				except AttributeError:
-					ingredient = ingredient.contents[0]
+					if len(ingredient.contents) > 0:
+						ingredient = ingredient.contents[0]
+					else:
+						ingredient = ''
 				
 				ingredients_string += amount + ' ' +  measure + ' ' + ingredient + '\n '
 
 			recipe_dict['Ingredients'] = ingredients_string
 			# Now find instructions
-			instructions = recipe_soup.find('div', itemprop='recipeInstructions').get_text()
+			instructions = recipe_soup.find('div', itemprop='recipeInstructions')
+			if instructions:
+				instructions = instructions.get_text()
+			else:
+				instructions = ''
 			recipe_dict['Instructions'] = instructions
 
 			
@@ -98,10 +111,7 @@ for course in courses_list:
 			recipes_df = pd.concat([recipes_df,recipe_df])
 			recipe_num += 1
 			
-		break
-
 	course_num += 1
-	break
 
 recipes_df.to_pickle('Recipes_DataFrame.pkl')
 print "recipes_df = " , recipes_df
