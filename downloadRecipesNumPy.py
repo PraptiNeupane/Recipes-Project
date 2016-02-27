@@ -1,8 +1,9 @@
-r"This file downloads the recipes from gourmetsleuth.com"
+r"This file downloads the recipes from gourmetsleuth.com and writes out the features matrix in the matrix market format and writes out the recipes as a pandas dataframe with just two columns (name, Instructions and Ingredients)"
 
 import urllib
 from bs4 import BeautifulSoup
 import numpy as np
+from scipy import sparse, io
 import pandas as pd
 from fractions import Fraction
 
@@ -53,14 +54,15 @@ def convert_units_to_tbsp(measure, amount, ingredient,recipe_name):
 		return amount
 
 
+# Arrays required for creating the features vector
 ingredients_array = []
 recipes_names = []
 recipes_ingredients = []
 recipes_amount = []
 recipes_measures = []
-recipes_instructions = []
 
-recipes_df = pd.DataFrame(columns = ('Name', 'Ingredients', 'Instructions'))
+# to create a recipes database
+recipes_df = pd.DataFrame(columns = ('Name', 'Ingredients and Instructions'))
 
 root_url = 'http://www.gourmetsleuth.com'
 recipes_url = root_url+'/recipes'
@@ -113,9 +115,10 @@ for course in courses_list:
 		# 	loop over all the items on that page
 		for item in food_items:
 			# create a dictionary to hold the recipe information about this food item
-			#recipe_dict = { }
+			recipe_dict = { }
 			recipe_url = root_url + item.find('a').get('href')
 			recipe_name = item.find('span').contents[0]
+			recipe_dict['Name'] = recipe_name
 
 			try:
 				recipe_html = urllib.urlopen(recipe_url)
@@ -126,7 +129,7 @@ for course in courses_list:
 			recipe_soup = BeautifulSoup(recipe_html, 'html.parser')
 
 			# Make a list of all the ingredients needed for this recipe
-			ingredients_string = ''
+			ingredients_instructions_string = ''
 			ingredients = recipe_soup.find_all('li', itemprop="ingredients")
 			curr_ingredients = list()
 			curr_amount = list()
@@ -159,8 +162,9 @@ for course in courses_list:
 					else:
 						ingredient = ''
 						curr_ingredients.append('NA')
+
+				ingredients_instructions_string += amount + ' ' + measure + ' ' + ingredient + '\n'
 					
-			my_ingredients_array = np.zeros(len(ingredients_array))
 			for item in curr_ingredients:
 				if item not in ingredients_array:
 					ingredients_array.append(item)
@@ -177,24 +181,28 @@ for course in courses_list:
 			else:
 				instructions = ''
 
-			recipes_instructions.append(instructions)
+			ingredients_instructions_string += instructions + '\n'
+			recipe_dict['Ingredients and Instructions'] = ingredients_instructions_string
+
 			
-#			recipe_df = pd.DataFrame(data=recipe_dict, index = [recipe_num])
-#			recipes_df = pd.concat([recipes_df,recipe_df])
+			recipe_df = pd.DataFrame(data=recipe_dict, index = [recipe_num])
+			recipes_df = pd.concat([recipes_df,recipe_df])
 			recipe_num += 1
-		break
-	
-	break
 
 	course_num += 1
 
+
 # now for each recipe, create an ingredient list that is as long as ingredients_array
 num_ingredients = len(ingredients_array)
-print "total ingredients = ", num_ingredients
 recipe_ingredients_large_array = []
 num_recipes = len(recipes_names)
+
+coo_matrix = []
+
+# first append [num_rows, num_cols, dummy_num]
+coo_matrix.append([num_recipes, num_ingredients, 0])
+
 for i in xrange(num_recipes):
-	curr_ing_array = np.zeros(num_ingredients)
 	ingredients = recipes_ingredients[i]
 	amounts = recipes_amount[i]
 	measures = recipes_measures[i]
@@ -204,32 +212,18 @@ for i in xrange(num_recipes):
 		curr_measure = measures[j]
 		curr_amount = amounts[j]
 		index = ingredients_array.index(curr_ing)
-		curr_ing_array[index] = convert_units_to_tbsp(curr_measure, curr_amount, curr_ing, recipes_names[i])
+		amount = convert_units_to_tbsp(curr_measure, curr_amount, curr_ing, recipes_names[i])
+		coo_matrix.append([i, index, amount])
 
-	recipe_ingredients_large_array.append(curr_ing_array)
+# store and write out the features vector as in matrix market format
+np.savetxt('./Recipe_Ingredients.mtx', coo_matrix, fmt = '%d %d %1.3f')
 
-np_recipe_names = np.array(recipes_names)
-np_recipe_ingredients = np.array(recipe_ingredients_large_array)
-np_recipe_instructions = np.array(recipes_instructions)
-
-
+# write out the recipe names
 nameFile = open('./Recipe_Names.txt', 'w')
 for item in recipes_names:
 	  nameFile.write("%s\n" % item)
 nameFile.close()
 
-np.savetxt('./Recipe_Ingredients.txt', np_recipe_ingredients)
 
-#instFile = open('./Recipe_Instructions.txt', 'w')
-#instFile.write("Recipe 0 \n")
-#itemnum = 0
-#for item in recipes_instructions:
-#	instFile.write("{}\n".format(item.encode('ascii','ignore')))
-#	instFile.write("Recipe {}\n".format(itemnum))
-#	itemnum += 1
-#instFile.close()
-
-	
-
-#recipes_df.to_pickle('Recipes_DataFrame.pkl')
-#print "recipes_df = " , recipes_df
+recipes_df.to_pickle('Recipes_DataFrame.pkl')
+print "recipes_df = " , recipes_df.head(50)

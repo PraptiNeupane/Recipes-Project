@@ -97,7 +97,7 @@ for course in courses_list:
 				
 				ingredients_string += amount + ' ' +  measure + ' ' + ingredient + '\n '
 
-			recipe_dict['Ingredients'] = ingredients_string
+			recipe_dict['Ingredients'] = [amount, measure, ingredient]
 			# Now find instructions
 			instructions = recipe_soup.find('div', itemprop='recipeInstructions')
 			if instructions:
