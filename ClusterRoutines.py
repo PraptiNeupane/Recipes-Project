@@ -40,3 +40,18 @@ def compute_centroids(features, cluster_indices, num_clusters):
 		centroids[i,:] = np.mean(my_cluster, axis=0)
 	
 	return centroids
+
+def runKMeans(max_iterations, num_clusters, features):
+	# initialize cluster centers
+	centroids = initialize_centroids(num_clusters, features)
+	
+	# iterate between finding centroids and assigning points to clusters
+	for i in xrange(max_iterations):
+		print "K-Means iteration ", i, " in progress ......"
+		# assign each point to a cluster
+		cluster_indices = find_closest_centroids(features, centroids)
+		# calculate new centroids
+		centroids = compute_centroids(features, cluster_indices, num_clusters)
+
+	return cluster_indices, centroids
+

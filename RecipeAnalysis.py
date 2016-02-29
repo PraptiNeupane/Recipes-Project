@@ -6,7 +6,8 @@ from scipy import argwhere
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import pairwise_distances
 from nltk.stem.porter import PorterStemmer
-
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import scale
 
 stemmer = PorterStemmer()
 def tokenize(text):
@@ -64,3 +65,11 @@ for recipe in query_names:
 		print Recipes_Names[curr_ind]
 	j += 1
 
+
+# Attempt to cluster recipes using tf-idf
+features = scale(tfidf_mat.todense())
+num_clusters = 3
+kmeans = KMeans(init='random', n_clusters=num_clusters, n_init=10)
+cluster_indices=kmeans.fit_predict(features)
+
+print "cluster_indices = ", cluster_indices
