@@ -163,7 +163,8 @@ for course in courses_list:
 						ingredient = ''
 						curr_ingredients.append('NA')
 
-				ingredients_instructions_string += amount + ' ' + measure + ' ' + ingredient + '\n'
+				#ingredients_instructions_string += amount.encode('ascii','ignore') + ' ' + measure.encode('ascii','ignore') + ' ' + ingredient.encode('ascii', 'ignore') + '\n'
+				ingredients_instructions_string += ingredient.encode('ascii', 'ignore') + '\n'
 					
 			for item in curr_ingredients:
 				if item not in ingredients_array:
@@ -177,7 +178,7 @@ for course in courses_list:
 			# Now find instructions
 			instructions = recipe_soup.find('div', itemprop='recipeInstructions')
 			if instructions:
-				instructions = instructions.get_text()
+				instructions = instructions.get_text().encode('ascii', 'ignore')
 			else:
 				instructions = ''
 
@@ -200,29 +201,29 @@ num_recipes = len(recipes_names)
 coo_matrix = []
 
 # first append [num_rows, num_cols, dummy_num]
-coo_matrix.append([num_recipes, num_ingredients, 0])
-
-for i in xrange(num_recipes):
-	ingredients = recipes_ingredients[i]
-	amounts = recipes_amount[i]
-	measures = recipes_measures[i]
-	num_ings = len(ingredients)
-	for j in xrange(num_ings):
-		curr_ing = ingredients[j]
-		curr_measure = measures[j]
-		curr_amount = amounts[j]
-		index = ingredients_array.index(curr_ing)
-		amount = convert_units_to_tbsp(curr_measure, curr_amount, curr_ing, recipes_names[i])
-		coo_matrix.append([i, index, amount])
-
-# store and write out the features vector as in matrix market format
-np.savetxt('./Recipe_Ingredients.mtx', coo_matrix, fmt = '%d %d %1.3f')
-
-# write out the recipe names
-nameFile = open('./Recipe_Names.txt', 'w')
-for item in recipes_names:
-	  nameFile.write("%s\n" % item)
-nameFile.close()
+#coo_matrix.append([num_recipes, num_ingredients, 0])
+#
+#for i in xrange(num_recipes):
+#	ingredients = recipes_ingredients[i]
+#	amounts = recipes_amount[i]
+#	measures = recipes_measures[i]
+#	num_ings = len(ingredients)
+#	for j in xrange(num_ings):
+#		curr_ing = ingredients[j]
+#		curr_measure = measures[j]
+#		curr_amount = amounts[j]
+#		index = ingredients_array.index(curr_ing)
+#		amount = convert_units_to_tbsp(curr_measure, curr_amount, curr_ing, recipes_names[i])
+#		coo_matrix.append([i, index, amount])
+#
+## store and write out the features vector as in matrix market format
+#np.savetxt('./Recipe_Ingredients.mtx', coo_matrix, fmt = '%d %d %1.3f')
+#
+## write out the recipe names
+#nameFile = open('./Recipe_Names.txt', 'w')
+#for item in recipes_names:
+#	  nameFile.write("%s\n" % item)
+#nameFile.close()
 
 
 recipes_df.to_pickle('Recipes_DataFrame.pkl')
