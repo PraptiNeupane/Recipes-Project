@@ -1,4 +1,4 @@
-r"This file downloads the recipes from gourmetsleuth.com and writes out the features matrix in the matrix market format and writes out the recipes as a pandas dataframe with just two columns (name, Instructions and Ingredients)"
+r"This file downloads the recipes from gourmetsleuth.com and writes out the features matrix in the coordinate format and writes out the recipes as a pandas dataframe with just two columns (name, Instructions and Ingredients)"
 
 import urllib
 from bs4 import BeautifulSoup
