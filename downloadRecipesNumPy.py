@@ -154,23 +154,24 @@ for course in courses_list:
 				#print "ingredient = ", ingredient
 				try:
 					ingredient = ingredient.find('a').contents[0]
-					curr_ingredients.append(ingredient)
+					curr_ingredients.append(ingredient.encode('ascii', 'ignore'))
 				except AttributeError:
 					if len(ingredient.contents) > 0:
 						ingredient = ingredient.contents[0]
-						curr_ingredients.append(ingredient)
+						curr_ingredients.append(ingredient.encode('ascii', 'ignore'))
 					else:
 						ingredient = ''
 						curr_ingredients.append('NA')
 
 				#ingredients_instructions_string += amount.encode('ascii','ignore') + ' ' + measure.encode('ascii','ignore') + ' ' + ingredient.encode('ascii', 'ignore') + '\n'
-				ingredients_instructions_string += ingredient.encode('ascii', 'ignore') + '\n'
+				ingredients_instructions_string += ingredient.encode('ascii', 'ignore') + '  '
 					
 			for item in curr_ingredients:
 				if item not in ingredients_array:
 					ingredients_array.append(item)
 
-			recipes_names.append(recipe_name.encode('ascii','ignore'))
+			# append the name of the recipe and the classification of that recipe according to course
+			recipes_names.append([recipe_name.encode('ascii','ignore'), course_num])
 			recipes_ingredients.append(curr_ingredients)
 			recipes_amount.append(curr_amount)
 			recipes_measures.append(curr_measure)
@@ -182,9 +183,9 @@ for course in courses_list:
 			else:
 				instructions = ''
 
-			ingredients_instructions_string += instructions + '\n'
+			ingredients_instructions_string += instructions + '  '
 			recipe_dict['Ingredients and Instructions'] = ingredients_instructions_string
-
+			recipe_dict['Classification'] = course_num
 			
 			recipe_df = pd.DataFrame(data=recipe_dict, index = [recipe_num])
 			recipes_df = pd.concat([recipes_df,recipe_df])
@@ -216,15 +217,20 @@ for i in xrange(num_recipes):
 		amount = convert_units_to_tbsp(curr_measure, curr_amount, curr_ing, recipes_names[i])
 		coo_matrix.append([i, index, amount])
 
-# store and write out the features vector as in matrix market format
+# store and write out the features matrix as in matrix market format
 np.savetxt('./Recipe_Ingredients.mtx', coo_matrix, fmt = '%d %d %1.3f')
 
 # write out the recipe names
-nameFile = open('./Recipe_Names.txt', 'w')
-for item in recipes_names:
-	  nameFile.write("%s\n" % item)
-nameFile.close()
+#nameFile = open('./Recipe_Names.txt', 'w')
+#for item in recipes_names:
+#	  nameFile.write("{}\t {}\n".format(item[0], item[1]) )
+#nameFile.close()
 
+# write out ingredients 
+ingFile = open('./Ingredient_Names.txt', 'w')
+for item in ingredients_array:
+	ingFile.write("{}\n".format(item))
+ingFile.close()
 
 recipes_df.to_pickle('Recipes_DataFrame.pkl')
-print "recipes_df = " , recipes_df.head(50)
+#print "recipes_df = " , recipes_df.head(50)
